@@ -3,15 +3,22 @@ package com.ics342.labs
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import com.ics342.labs.data.DataItem
 import com.ics342.labs.ui.theme.LabsTheme
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 private val dataItems = listOf(
     DataItem(1, "Item 1", "Description 1"),
@@ -43,7 +50,7 @@ class MainActivity : ComponentActivity() {
             LabsTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Greeting("Android")
+                    DataItemList(dataItems)
                 }
             }
         }
@@ -60,18 +67,31 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun DataItemView(dataItem: DataItem) {
-    /* Create the view for the data item her. */
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text(text = "${dataItem.id}", fontSize = 40.sp, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.padding(start = 10.dp, top = 5.dp)) {
+                Text(text = dataItem.name, fontWeight = FontWeight.Bold)
+                Text(text = dataItem.description)
+            }
+        }
+    }
 }
 
 @Composable
 fun DataItemList(dataItems: List<DataItem>) {
     /* Create the list here. This function will call DataItemView() */
+    LazyColumn {
+        itemsIndexed(dataItems) { _, dataItem ->
+            DataItemView(dataItem)
+        }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     LabsTheme {
-        Greeting("Android")
+        DataItemList(dataItems)
     }
 }
