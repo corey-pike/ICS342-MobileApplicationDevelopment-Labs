@@ -10,22 +10,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import com.ics342.labs.data.DataItem
 import com.ics342.labs.ui.theme.LabsTheme
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 
 private val dataItems = listOf(
     DataItem(1, "Item 1", "Description 1"),
@@ -55,58 +60,58 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             LabsTheme {
-                // A surface container using the 'background' color from the theme
+                val navController = rememberNavController()
+                val viewModel: DetailsScreenViewModel = ViewModelProvider(this)[DetailsScreenViewModel::class.java]
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    DataItemList(dataItems)
+                    val selectedDataItem by viewModel.selectedDataItem.observeAsState()
+                    NavHost(navController = navController, startDestination = "dataItemList") {
+                        composable("dataItemList") {
+                            DataItemList(dataItems) { dataItem ->
+                                viewModel.setSelectedDataItem(dataItem)
+                                navController.navigate("detailsScreen")
+                            }
+                        }
+                        composable("detailsScreen") {
+                            DetailsScreen(selectedDataItem ?: DataItem(0, "", ""), navController)
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+
+class DetailsScreenViewModel : ViewModel() {
+    private val _selectedDataItem = MutableLiveData<DataItem>()
+    val selectedDataItem: LiveData<DataItem> = _selectedDataItem
+    fun setSelectedDataItem(dataItem: DataItem) {
+        _selectedDataItem.value = dataItem
+    }
+}
+
 @Composable
-fun DataItemView(dataItem: DataItem) {
-    val dialogState = remember { mutableStateOf(false) }
-    Column(modifier = Modifier.padding(16.dp).clickable { dialogState.value = true }) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+fun DataItemView(dataItem: DataItem, onItemClick: (DataItem) -> Unit) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onItemClick(dataItem) },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(text = "${dataItem.id}", fontSize = 40.sp, fontWeight = FontWeight.Bold)
             Column(modifier = Modifier.padding(start = 10.dp, top = 5.dp)) {
                 Text(text = dataItem.name, fontWeight = FontWeight.Bold)
                 Text(text = dataItem.description)
             }
         }
-        if (dialogState.value) {
-            AlertDialog(
-                onDismissRequest = { dialogState.value = false },
-                title = { Text(text = dataItem.name) },
-                text = { Text(text = dataItem.description) },
-                confirmButton = {
-                    Button(
-                        onClick = { dialogState.value = false },
-                    ) {
-                        Text(text = "Okay")
-                    }
-                }
-            )
-        }
     }
-    Modifier.clickable { dialogState.value = true }
 }
-
 @Composable
-fun DataItemList(dataItems: List<DataItem>) {
-    /* Create the list here. This function will call DataItemView() */
+fun DataItemList(dataItems: List<DataItem>, onItemClick: (DataItem) -> Unit) {
     LazyColumn {
         itemsIndexed(dataItems) { _, dataItem ->
-            DataItemView(dataItem)
+            DataItemView(dataItem, onItemClick)
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    LabsTheme {
-        DataItemList(dataItems)
     }
 }
