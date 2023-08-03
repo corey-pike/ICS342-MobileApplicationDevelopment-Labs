@@ -35,6 +35,26 @@ internal class NumbersRepositoryTest {
 
     @Test
     fun ifDatabaseIsEmptyShouldFetchNumbersFromApi() {
-        // TODO: implement this test
+        val database = mockk<Database>()
+        val api = mockk<Api>()
+
+        val numbersFromApi = listOf(
+            Number("1", 45),
+            Number("2", 228),
+            Number("3", 12194)
+        )
+
+        every { database.getAllNumbers() } returns emptyList()
+        every { api.getNumbers() } returns numbersFromApi
+        every { database.storeNumbers(numbersFromApi) } returns Unit
+
+        val repository = NumbersRepository(database, api)
+        val result = repository.fetchNumbers()
+
+        assertEquals(numbersFromApi, result)
+
+        verify(exactly = 1) { database.getAllNumbers() }
+        verify(exactly = 1) { api.getNumbers() }
+        verify(exactly = 1) { database.storeNumbers(numbersFromApi) }
     }
 }
